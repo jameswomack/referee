@@ -1,0 +1,29 @@
+{
+  "env": {
+    "browser": true,
+    "node": true,
+    "es2022": true
+  },
+  "extends": "eslint:recommended",
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "sourceType": "module"
+  },
+  "rules": {
+    "prefer-const": "error",
+    "no-unused-vars": "warn",
+    "no-console": "warn"
+  },
+  "ignorePatterns": [
+    "fixture.mjs"
+  ],
+  "overrides": [
+    {
+      "files": ["test.mjs"],
+      "rules": {
+        "no-console": "off"
+      }
+    }
+  ]
+}
+

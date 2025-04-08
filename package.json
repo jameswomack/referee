@@ -1,0 +1,29 @@
+{
+  "name": "@jameswomack/referee",
+  "version": "1.0.0-alpha.0",
+  "module": "index.mjs",
+  "type": "module",
+  "scripts": {
+    "start": "node index.mjs",
+    "test": "npm run lint && node test.mjs",
+    "lint": "eslint index.mjs",
+    "lint:fix": "eslint --fix index.mjs"
+  },
+  "keywords": [
+    "referee",
+    "javascript",
+    "parser",
+    "acorn",
+    "ast"
+  ],
+  "author": "James Womack <james@womack.io>",
+  "license": "ISC",
+  "description": "Referee finds references to a given set of identifiers in a JavaScript file",
+  "dependencies": {
+    "acorn-loose": "^8.4.0",
+    "acorn-walk": "^8.3.4"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.1"
+  }
+}
