@@ -87,8 +87,6 @@ test('parse function (exclusions)', () => {
   
   const externalDeclarations = parseResult.externalObjects;
 
-  console.log('\nThe external declarations consist of: ', externalDeclarations, '\n');
-
   const methodCallReport = getMethodCallReport(parseResult.externalMethodCallMap);
   console.log('\nThe external method call report consists of: ', methodCallReport, '\n');
 
@@ -96,6 +94,8 @@ test('parse function (exclusions)', () => {
   assert.equal(methodCallReport.find((item) => item.object === 'window' && item.method === 'addEventListener').count, 1, 'The window.addEventListener method should not be affected by exclusions');
   assert.equal(methodCallReport.find((item) => item.object === 'sn_glider_ide.language.ScopedCodeEvaluator'), null, 'The sn_glider_ide.language.ScopedCodeEvaluator methods should not be surfaced');
   assert.equal(methodCallReport.find((item) => item.object === 'console' && item.method === 'log'), null, 'The console.log method should not be surfaced');
+
+  console.log('\nThe external declarations consist of: ', externalDeclarations, '\n');
   
   // Check all external declarations
   assert.deepEqual(externalDeclarations, [
