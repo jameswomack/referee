@@ -34,10 +34,14 @@ test('parse function (externalDeclarations)', () => {
 
   const methodCallReport = getMethodCallReport();
   console.log('\nThe external method call report consists of: ', methodCallReport, '\n');
+  
   assert.ok(methodCallReport.length > 0, 'The external method call report should not be empty');
   assert.equal(methodCallReport.find((item) => item.object === 'console' && item.method === 'log').count, 4, 'The console.log method should be called 4 times');
 
   assert.equal(methodCallReport.find((item) => item.object === 'sn_glider_ide.language.ScopedCodeEvaluator' && item.method === 'evaluate').count, 1, 'The sn_glider_ide.language.ScopedCodeEvaluator.evaluate method should be called 1 time');
+  
+  assert.equal(methodCallReport.find((item) => item.object === 'MyClass'), null, 'The MyClass methods should not be surfaced');
+
 
   console.log('\nThe external declarations consist of: ', externalDeclarations, '\n');
 
