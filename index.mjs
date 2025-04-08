@@ -33,6 +33,17 @@ function findExternalMethodCallTargets(sourceCode) {
     checkPrivateFields: false,
   });
 
+  // ---[ New Branch: Track external objects and method names with call frequency ]---
+  const externalMethodCallMap = new Map(); // Map<string, Map<string, number>>
+
+  function incrementMethodCall(objectPath, methodName) {
+    if (!externalMethodCallMap.has(objectPath)) {
+      externalMethodCallMap.set(objectPath, new Map());
+    }
+    const methods = externalMethodCallMap.get(objectPath);
+    methods.set(methodName, (methods.get(methodName) || 0) + 1);
+  }
+
   const functionParamBindings = new Set();
   
   const localBindings = new Set();
@@ -118,11 +129,12 @@ function findExternalMethodCallTargets(sourceCode) {
         const fullChain = timedReconstructObjectExpression(node.callee);
         const parts = fullChain.split(".");
         if (parts.length > 1) {
-          parts.pop(); // remove method name
+          const methodName = parts.pop();
           const targetObject = parts.join(".");
           const rootIdentifier = parts[0];
           if (!allLocalIdentifiersAndBindings.has(rootIdentifier)) {
             externalTargets.add(targetObject);
+            incrementMethodCall(targetObject, methodName);
           }
         }
       }
@@ -165,17 +177,27 @@ function findExternalMethodCallTargets(sourceCode) {
     CallExpression(node) {
       if (isCalleeMemberExpression(node)) {
         const obj = node.callee.object;
+        const method = node.callee.property;
+
         if (isIdentifier(obj)) {
           const instanceName = obj.name;
           const constructor = instanceToClassMap.get(instanceName);
           maybeAddToExternalTargets(constructor);
+
+          // ---[ NEW: Track method call on external constructor instances ]---
+          if (constructor && isIdentifier(method) && isExternal(constructor)) {
+            incrementMethodCall(constructor, method.name);
+          }
         }
       }
     }
   });
 
 
-  return Array.from(externalTargets);
+  return {
+    externalObjects: Array.from(externalTargets),
+    externalMethodCallMap
+  };
 }
 
 

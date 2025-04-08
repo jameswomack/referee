@@ -17,12 +17,27 @@ function __getCode__(filePath = '') {
 test('parse function (externalDeclarations)', () => {
   const code = __getCode__('fixture.mjs');
 
-  // Time the parse function
-  const start = process.hrtime.bigint();
-  const externalDeclarations = parse(code);
-  const end = process.hrtime.bigint();
-  const duration = (end - start) / BigInt(1e6); // Convert to milliseconds
-  console.log(`The \`parse\` function took ${duration} milliseconds`);
+  const parseResult = parse(code);
+  
+  const externalDeclarations = parseResult.externalObjects;
+  const externalMethodCallMap = parseResult.externalMethodCallMap;
+
+  function getMethodCallReport() {
+    const out = [];
+    for (const [object, methods] of externalMethodCallMap.entries()) {
+      for (const [method, count] of methods.entries()) {
+        out.push({ object, method, count });
+      }
+    }
+    return out;
+  }
+
+  const methodCallReport = getMethodCallReport();
+  console.log('\nThe external method call report consists of: ', methodCallReport, '\n');
+  assert.ok(methodCallReport.length > 0, 'The external method call report should not be empty');
+  assert.equal(methodCallReport.find((item) => item.object === 'console' && item.method === 'log').count, 4, 'The console.log method should be called 4 times');
+
+  assert.equal(methodCallReport.find((item) => item.object === 'sn_glider_ide.language.ScopedCodeEvaluator' && item.method === 'evaluate').count, 1, 'The sn_glider_ide.language.ScopedCodeEvaluator.evaluate method should be called 1 time');
 
   console.log('\nThe external declarations consist of: ', externalDeclarations, '\n');
 
