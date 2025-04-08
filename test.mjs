@@ -13,28 +13,29 @@ function __getCode__(filePath = '') {
   return fs.readFileSync(fixturePath, 'utf-8');
 }
 
+function getMethodCallReport(externalMethodCallMap) {
+  const out = [];
+  for (const [object, methods] of externalMethodCallMap.entries()) {
+    for (const [method, count] of methods.entries()) {
+      out.push({ object, method, count });
+    }
+  }
+  return out;
+}
 
-test('parse function (externalDeclarations)', () => {
+
+test('parse function (default settings)', () => {
   const code = __getCode__('fixture.mjs');
 
-  const parseResult = parse(code);
+  const parseOptions = {};
+
+  const parseResult = parse(code, parseOptions);
   
   const externalDeclarations = parseResult.externalObjects;
-  const externalMethodCallMap = parseResult.externalMethodCallMap;
 
-  function getMethodCallReport() {
-    const out = [];
-    for (const [object, methods] of externalMethodCallMap.entries()) {
-      for (const [method, count] of methods.entries()) {
-        out.push({ object, method, count });
-      }
-    }
-    return out;
-  }
-
-  const methodCallReport = getMethodCallReport();
+  const methodCallReport = getMethodCallReport(parseResult.externalMethodCallMap);
   console.log('\nThe external method call report consists of: ', methodCallReport, '\n');
-  
+
   assert.ok(methodCallReport.length > 0, 'The external method call report should not be empty');
   assert.equal(methodCallReport.find((item) => item.object === 'console' && item.method === 'log').count, 4, 'The console.log method should be called 4 times');
 
@@ -68,5 +69,40 @@ test('parse function (externalDeclarations)', () => {
     'window.location',
     'MyOtherClass',
     'sn_glider_ide.language.ScopedCodeEvaluator'
+  ]);
+});
+
+test('parse function (exclusions)', () => {
+  const code = __getCode__('fixture.mjs');
+
+  const parseOptions = {
+    exclusions: [
+      'window.location',
+      'sn_glider_ide.language.ScopedCodeEvaluator',
+      'console'
+    ]
+  };
+
+  const parseResult = parse(code, parseOptions);
+  
+  const externalDeclarations = parseResult.externalObjects;
+
+  console.log('\nThe external declarations consist of: ', externalDeclarations, '\n');
+
+  const methodCallReport = getMethodCallReport(parseResult.externalMethodCallMap);
+  console.log('\nThe external method call report consists of: ', methodCallReport, '\n');
+
+  assert.equal(methodCallReport.find((item) => item.object === 'window.location'), null, 'The window.location methods should not be surfaced');
+  assert.equal(methodCallReport.find((item) => item.object === 'window' && item.method === 'addEventListener').count, 1, 'The window.addEventListener method should not be affected by exclusions');
+  assert.equal(methodCallReport.find((item) => item.object === 'sn_glider_ide.language.ScopedCodeEvaluator'), null, 'The sn_glider_ide.language.ScopedCodeEvaluator methods should not be surfaced');
+  assert.equal(methodCallReport.find((item) => item.object === 'console' && item.method === 'log'), null, 'The console.log method should not be surfaced');
+  
+  // Check all external declarations
+  assert.deepEqual(externalDeclarations, [
+    'axios',
+    'document',
+    'window',
+    'navigator.geolocation',
+    'MyOtherClass',
   ]);
 });

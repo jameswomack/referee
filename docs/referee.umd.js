@@ -7557,12 +7557,18 @@ var Referee = (() => {
       return result;
     };
   }
-  function findExternalMethodCallTargets(sourceCode) {
+  var PARSE_OPTION_DEFAULTS = {
+    exclusions: [],
+    acornOptions: {}
+  };
+  function findExternalMethodCallTargets(sourceCode, options = PARSE_OPTION_DEFAULTS) {
+    options = Object.assign({}, PARSE_OPTION_DEFAULTS, options);
     const timedAcornLooseParse = timedFn(parse5.bind(acorn_loose_exports));
     const ast = timedAcornLooseParse(sourceCode, {
       ecmaVersion: "latest",
       sourceType: "module",
-      checkPrivateFields: false
+      checkPrivateFields: false,
+      ...options.acornOptions || {}
     });
     const externalMethodCallMap = /* @__PURE__ */ new Map();
     function incrementMethodCall(objectPath, methodName) {
@@ -7614,9 +7620,20 @@ var Referee = (() => {
     });
     const allLocalIdentifiersAndBindings = /* @__PURE__ */ new Set([...localBindings, ...functionParamBindings, ...argumentIdentifiers]);
     const isLocal = (name) => name && allLocalIdentifiersAndBindings.has(name);
-    const isExternal = (name) => name && !isLocal(name);
+    const isExternal = (name) => name && !isLocal(name) && !isExcluded(name);
+    const isExcluded = (name) => {
+      if (!name || !Array.isArray(options.exclusions)) return false;
+      for (const exclusion of options.exclusions) {
+        if (name.startsWith(exclusion)) {
+          return true;
+        }
+      }
+      return false;
+    };
     const externalTargets = /* @__PURE__ */ new Set();
-    const maybeAddToExternalTargets = (name) => isExternal(name) && externalTargets.add(name);
+    const maybeAddToExternalTargets = (name) => {
+      return !isExcluded(name) && isExternal(name) && externalTargets.add(name);
+    };
     function reconstructObjectExpression(expressionNode) {
       const parts = [];
       while (isMemberExpression(expressionNode) && !expressionNode.computed) {
@@ -7642,7 +7659,7 @@ var Referee = (() => {
             const methodName = parts.pop();
             const targetObject = parts.join(".");
             const rootIdentifier = parts[0];
-            if (!allLocalIdentifiersAndBindings.has(rootIdentifier)) {
+            if (!allLocalIdentifiersAndBindings.has(rootIdentifier) && !isExcluded(targetObject)) {
               externalTargets.add(targetObject);
               incrementMethodCall(targetObject, methodName);
             }

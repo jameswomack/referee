@@ -20,13 +20,21 @@ function timedFn(fn) {
   };
 }
 
+const PARSE_OPTION_DEFAULTS = {
+  exclusions: [],
+  acornOptions: {},
+};
+
 // Given source code string
-function findExternalMethodCallTargets(sourceCode) {
+function findExternalMethodCallTargets(sourceCode, options = PARSE_OPTION_DEFAULTS) {
+  options = Object.assign({}, PARSE_OPTION_DEFAULTS, options);
+
   const timedAcornLooseParse = timedFn(acornLoose.parse.bind(acornLoose));
   const ast = timedAcornLooseParse(sourceCode, { 
     ecmaVersion: "latest", 
     sourceType: "module",
     checkPrivateFields: false,
+    ...options.acornOptions || {},
   });
 
   // ---[ New Branch: Track external objects and method names with call frequency ]---
@@ -94,11 +102,25 @@ function findExternalMethodCallTargets(sourceCode) {
 
   const allLocalIdentifiersAndBindings = new Set([...localBindings, ...functionParamBindings, ...argumentIdentifiers]);
   const isLocal = (name) => name && allLocalIdentifiersAndBindings.has(name);
-  const isExternal = (name) => name && !isLocal(name);
+  const isExternal = (name) => name && !isLocal(name) && !isExcluded(name);
+
+  const isExcluded = (name) => {
+    if (!name || !Array.isArray(options.exclusions)) return false;
+    for (const exclusion of options.exclusions) {
+      if (name.startsWith(exclusion)) {
+        // console.warn(`Exclusion "${exclusion}" matched "${name}"`); // eslint-disable-line no-console
+        return true;
+      }
+    }
+    return false;
+  }
 
   // Pass 2: Identify method calls on external objects
   const externalTargets = new Set();
-  const maybeAddToExternalTargets = (name) => isExternal(name) && externalTargets.add(name)
+  const maybeAddToExternalTargets = (name) => {
+    // console.log(name, externalTargets, isExcluded(name), isExternal(name));
+    return !isExcluded(name) && isExternal(name) && externalTargets.add(name);
+  }
 
   // 🔍 Helper: reconstruct full object expression (e.g. `navigator.geolocation`)
   function reconstructObjectExpression(expressionNode) {
@@ -128,7 +150,7 @@ function findExternalMethodCallTargets(sourceCode) {
           const methodName = parts.pop();
           const targetObject = parts.join(".");
           const rootIdentifier = parts[0];
-          if (!allLocalIdentifiersAndBindings.has(rootIdentifier)) {
+          if (!allLocalIdentifiersAndBindings.has(rootIdentifier) && !isExcluded(targetObject)) {
             externalTargets.add(targetObject);
             incrementMethodCall(targetObject, methodName);
           }
