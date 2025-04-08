@@ -1,23 +1,19 @@
-// defined require for ESM using createRequire
-import { createRequire } from "module";
-const require = createRequire(import.meta.url);
+import * as acornLoose from 'acorn-loose';
+import * as walk from 'acorn-walk';
 
-const acornLoose = require("acorn-loose");
-const walk = require("acorn-walk");
-
-function timedFn (fn) {
-  return function (...args) {
-    const start = process.hrtime.bigint();
+function timedFn(fn) {
+  return function(...args) {
+    const start = performance.now();
     const result = fn(...args);
-    const end = process.hrtime.bigint();
-    const duration = (end - start) / BigInt(1e3); // Convert to microseconds
+    const end = performance.now();
+    const duration = (end - start) * 1000; // Convert to microseconds
     /* eslint-disable no-console */
     if (duration > 1000) {
-      console.info(`\`${fn.name}\` *${duration / BigInt(1e3)}* milliseconds`);
+      console.info(`\`${fn.name}\` *${parseInt(duration / 1000)}* milliseconds`);
     } else if (duration < 1) {
-      console.info(`\`${fn.name}\` *${end - start}* nanoseconds`);
+      console.info(`\`${fn.name}\` *${parseInt(duration * 1000)}* nanoseconds`);
     } else {
-      console.info(`\`${fn.name}\` *${duration}* microseconds`);
+      console.info(`\`${fn.name}\` *${parseInt(duration)}* microseconds`);
     }
     /* eslint-enable no-console */
     return result;

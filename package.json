@@ -3,11 +3,23 @@
   "version": "1.0.0-alpha.0",
   "module": "index.mjs",
   "type": "module",
+  "browser": "dist/referee.esm.js",
+  "unpkg": "dist/referee.umd.js",
+  "files": [
+    "index.mjs",
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
   "scripts": {
     "start": "node index.mjs",
     "test": "npm run lint && node test.mjs",
     "lint": "eslint index.mjs",
-    "lint:fix": "eslint --fix index.mjs"
+    "lint:fix": "eslint --fix index.mjs",
+    "build": "npm run build:esm && npm run build:umd",
+    "build:esm": "esbuild index.mjs --bundle --format=esm --platform=browser --outfile=dist/referee.esm.js",
+    "build:umd": "esbuild index.mjs --bundle --format=iife --platform=browser --global-name=Referee --outfile=dist/referee.umd.js",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "referee",
@@ -24,6 +36,11 @@
     "acorn-walk": "^8.3.4"
   },
   "devDependencies": {
+    "esbuild": "^0.25.2",
     "eslint": "^8.57.1"
+  },
+  "engines": {
+    "node": ">=20",
+    "npm": ">=9"
   }
 }
