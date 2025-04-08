@@ -2,6 +2,8 @@
 
 ## Example output
 
+<img width="1270" alt="Screenshot 2025-04-08 at 4 38 24 AM" src="https://github.com/user-attachments/assets/5f2daf86-85cf-4c65-aa1f-fd648f58a403" />
+
 ```sh
 `bound parse` *3* milliseconds
 `bound ancestor` *345* microseconds
