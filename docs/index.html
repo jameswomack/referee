@@ -1,45 +1,182 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Referee Documentation</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        h1 {
-            color: #2c3e50;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 10px;
-        }
-        p {
-            margin-bottom: 20px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Referee - JavaScript External Object Analyzer</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+      color: #333;
+    }
+    h1 {
+      color: #2c3e50;
+      margin-bottom: 10px;
+    }
+    .description {
+      color: #7f8c8d;
+      margin-bottom: 20px;
+    }
+    .container {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .input-section, .output-section {
+      flex: 1;
+    }
+    textarea {
+      width: 100%;
+      height: 300px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 14px;
+      resize: vertical;
+    }
+    button {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-top: 10px;
+    }
+    button:hover {
+      background-color: #2980b9;
+    }
+    .results {
+      background-color: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 15px;
+      margin-top: 10px;
+      font-family: monospace;
+      white-space: pre-wrap;
+      overflow-x: auto;
+    }
+    .section-title {
+      font-weight: bold;
+      margin-bottom: 8px;
+      color: #2c3e50;
+    }
+    .highlight {
+      background-color: #f1c40f;
+      padding: 2px 4px;
+      border-radius: 2px;
+    }
+    .method-call {
+      margin-left: 20px;
+      color: #2980b9;
+    }
+  </style>
 </head>
 <body>
-    <header>
-        <h1>Welcome to Referee</h1>
-    </header>
-    <main>
-        <p>
-            This is the official documentation for Referee. This page is currently a placeholder.
-            Future content will provide information about the project, installation instructions,
-            usage examples, and API documentation.
-        </p>
-        <p>
-            Check back soon for updates or contribute to the documentation on GitHub.
-        </p>
-    </main>
-    <footer>
-        <p>&copy; 2025 Referee Project</p>
-    </footer>
+  <h1>Referee - JavaScript External Object Analyzer</h1>
+  <p class="description">
+    Analyze JavaScript code to identify external object references and method calls.
+  </p>
+
+  <div class="container">
+    <div class="input-section">
+      <div class="section-title">Input JavaScript Code:</div>
+      <textarea id="code-input">// Example code with external objects and methods
+// Try modifying this code to see different results
+
+// Browser API calls
+document.getElementById('app').innerHTML = '<p>Hello World</p>';
+window.addEventListener('load', function() {
+  console.log('Page loaded');
+  localStorage.setItem('lastVisit', new Date().toString());
+});
+
+// External library usage
+const chart = new Chart(ctx, {
+  type: 'bar',
+  data: chartData
+});
+chart.update();
+
+// DOM manipulation
+const button = document.createElement('button');
+button.textContent = 'Click me';
+button.addEventListener('click', () => {
+  fetch('/api/data')
+    .then(response => response.json())
+    .then(data => {
+      console.log(data);
+    });
+});
+
+// More complex call chains
+navigator.geolocation.getCurrentPosition(position => {
+  const { latitude, longitude } = position.coords;
+  mapboxgl.Map.flyTo([latitude, longitude]);
+});</textarea>
+      <button id="analyze-btn">Analyze Code</button>
+    </div>
+
+    <div class="output-section">
+      <div class="section-title">Analysis Results:</div>
+      <div id="results" class="results">Run the analysis to see results...</div>
+    </div>
+  </div>
+
+  <!-- Load the Referee library -->
+  <script src="referee.umd.js"></script>
+  
+  <script>
+    document.getElementById('analyze-btn').addEventListener('click', function() {
+      const sourceCode = document.getElementById('code-input').value;
+      
+      try {
+        // Parse the code using Referee
+        const result = Referee.parse(sourceCode);
+        
+        // Format the results
+        let formattedOutput = 'External Objects:\n';
+        formattedOutput += '================\n';
+        
+        if (result.externalObjects.length === 0) {
+          formattedOutput += '  No external objects found\n';
+        } else {
+          result.externalObjects.forEach(obj => {
+            formattedOutput += `• ${obj}\n`;
+          });
+        }
+        
+        formattedOutput += '\nMethod Calls:\n';
+        formattedOutput += '============\n';
+        
+        if (result.externalMethodCallMap.size === 0) {
+          formattedOutput += '  No method calls found\n';
+        } else {
+          // Convert Map to array for easier manipulation
+          const methodCalls = Array.from(result.externalMethodCallMap.entries());
+          
+          methodCalls.forEach(([objectPath, methods]) => {
+            formattedOutput += `• ${objectPath}:\n`;
+            
+            Array.from(methods.entries()).forEach(([methodName, count]) => {
+              formattedOutput += `  → ${methodName} (called ${count} time${count !== 1 ? 's' : ''})\n`;
+            });
+          });
+        }
+        
+        // Display the results
+        document.getElementById('results').textContent = formattedOutput;
+      } catch (error) {
+        document.getElementById('results').textContent = `Error: ${error.message}`;
+      }
+    });
+  </script>
 </body>
 </html>
 
